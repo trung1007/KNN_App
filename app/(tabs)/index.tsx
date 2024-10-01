@@ -5,6 +5,9 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect } from 'react';
+import dataset from '../../src/dataset.js'
+import trainData from '../../src/traindata.js'
+import testData from '../../src/testdata.js'
 
 export default function HomeScreen() {
   const KNN = require('ml-knn');
