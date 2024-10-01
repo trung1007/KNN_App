@@ -35,9 +35,8 @@ export default function HomeScreen() {
     "em là nữ lớp 12 em xin chút review mi1 của trường và cơ hội xttn ạ",
     "Mua hộ bố cái thẻ vina 10k đi nạp sđt 0863643624",
     "Tiktok đang tuyển nhân viên làm việc tại nhà !"
-];
+  ];
 
-const documentToAnalyze: string = documents[0]; // 
 
 
 
@@ -45,66 +44,121 @@ const documentToAnalyze: string = documents[0]; //
     let wordCount = 0;
     const words: string[] = document.toLowerCase().split(' ');
     words.forEach((w) => {
-        if (w === word) {
-            wordCount++;
-        }
+      if (w === word) {
+        wordCount++;
+      }
     });
     return wordCount / words.length;
-}
+  }
 
-function computeIDF(word: string, allDocuments: string[]): number {
-  let numDocsContainingWord = 0;
-  allDocuments.forEach((document) => {
-    document = document.toLowerCase()
+  function computeIDF(word: string, allDocuments: string[]): number {
+    let numDocsContainingWord = 0;
+    allDocuments.forEach((document) => {
+      document = document.toLowerCase()
       if (document.includes(word.toLowerCase())) {
-          numDocsContainingWord++;
+        numDocsContainingWord++;
       }
-  });
-  return Math.log(allDocuments.length / (numDocsContainingWord));
-}
+    });
+    return Math.log(allDocuments.length / (numDocsContainingWord));
+  }
 
-function computeTFIDF(word: string, document: string, allDocuments: string[]): number {
-  const tf = computeTF(word, document);
-  const idf = computeIDF(word, allDocuments);
-  return tf * idf;
-}
+  function computeTFIDF(word: string, document: string, allDocuments: string[]): number {
+    const tf = computeTF(word, document);
+    const idf = computeIDF(word, allDocuments);
+    return tf * idf;
+  }
 
-// Tính TF-IDF cho tất cả từ trong tài liệu
-function computeAllTFIDF(document: string, allDocuments: string[]): Record<string, number> {
-  const words: string[] = [...new Set(document.split(' '))]; // Xóa từ trùng lặp
-  const tfidfScores: Record<string, number> = {};
+  // Tính TF-IDF cho tất cả từ trong tài liệu
+  function computeAllTFIDF(document: string, allDocuments: string[]): Record<string, number> {
+    const words: string[] = [...new Set(document.toLowerCase().split(' '))]; // Xóa từ trùng lặp
+    const tfidfScores: Record<string, number> = {};
 
-  words.forEach((word) => {
+    words.forEach((word) => {
       tfidfScores[word] = computeTFIDF(word, document, allDocuments);
-  });
+    });
 
-  return tfidfScores;
-}
-const allTfidfScores: Record<string, Record<string, number>> = {};
-  useEffect(()=>{
+    return tfidfScores;
+  }
+  const allTfidfScores: Record<string, Record<string, number>> = {};
+  const allTfIdfScores: Record<string, Record<string, number>> = {};
+
+  useEffect(() => {
     // console.log(KNN);
     // console.log(knn);
     // console.log(ans);
-    const lowercasedDocuments = documents.map(doc => doc.toLowerCase());
 
-    const arrayOfTfIdf:any[]=[]
-    
-    for(let i=0;i<documents.length-1;i++){
-      let tfidfScore = computeAllTFIDF(lowercasedDocuments[i],documents)
-      allTfidfScores[`Document ${i + 1}`] = tfidfScore;
-      const arrayTemp = Object.values(allTfidfScores[`Document ${i + 1}`])
-      arrayOfTfIdf.push(arrayTemp)
+    // const trainDataSetString = []
+    // const trainLabelTest = []
+    // for (let i = 0; i < trainData.length; i++) {
+    //   if (i % 2 === 0) {
+    //     trainDataSetString.push(trainData[i])
+    //   }
+    //   else {
+    //     trainLabelTest.push(parseInt(trainData[i], 10))
+    //   }
+    // }
+    // const trainDataSetArray = []
+    // for (let i = 0; i < trainDataSetString.length; i++) {
+    //   var trainProccess = (i + 1) * 100 / trainDataSetString.length
+    //   console.log(trainProccess.toFixed(2) + "%");
+    //   let TfIdfScoreTemp = computeAllTFIDF(trainDataSetString[i], trainDataSetString)
+    //   allTfIdfScores[`Document ${i + 1}`] = TfIdfScoreTemp
+    //   const TfIdfArrayTemp = Object.values(allTfIdfScores[`Document ${i + 1}`])
+    //   trainDataSetArray.push(TfIdfArrayTemp)
+    // }
+    // const testDataSetString = []
+    // for (let i = 0; i < testData.length; i++) {
+    //   if (i % 2 === 0) {
+    //     testDataSetString.push(testData[i])
+    //   }
+    // }
+
+    // const testDataSetArray = []
+    // for (let i = 0; i < testDataSetString.length; i++) {
+    //   var convertProccess = (i + 1) * 100 / testDataSetString.length
+    //   console.log(convertProccess.toFixed(2) + "%");
+    //   let TfIdfScoreTemp = computeAllTFIDF(testDataSetString[i], testDataSetString)
+    //   allTfIdfScores[`Document ${i + 1}`] = TfIdfScoreTemp
+    //   const TfIdfArrayTemp = Object.values(allTfIdfScores[`Document ${i + 1}`])
+    //   testDataSetArray.push(TfIdfArrayTemp)
+    // }
+    // var KNN_test = new KNN(trainDataSetArray, trainLabelTest, { k: 2 });
+    // let res = KNN_test.predict(testDataSetArray)
+    // console.log(res);
+    const result_DataSet = []
+
+    for (let i = 0; i < testData.length; i++) {
+      if (i % 2 !== 0) {
+        result_DataSet.push(parseInt(testData[i]))
+      }
     }
-    const allTfIdfJSON = JSON.stringify(allTfidfScores, null, 2);
-    // console.log(allTfIdfJSON);
-    console.log(arrayOfTfIdf);
-    var train_labels_test = [0,1,1,0]
-    var KNN_test = new KNN(arrayOfTfIdf, train_labels_test, { k: 2 }); 
-    let tfidf_temp = computeAllTFIDF(lowercasedDocuments[4],documents)
-    allTfidfScores[`Document 5`] = tfidf_temp
-    let test_TfIdf_array = Object.values(allTfidfScores[`Document 5`])
-    let res = KNN_test.predict(test_TfIdf_array)
-    console.log(res);
+    let count_DataSet = 0
+    let count_actualKNN = 0
+   
+
+    const results = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+
+    let count = 0
+    for (let i = 0; i < result_DataSet.length; i++) {
+      count_DataSet += result_DataSet[i]
+      count_actualKNN += results[i]
+      if(result_DataSet[i]===results[i]){
+        count++;
+      }
+    }
+    const percent_matching = ((count/result_DataSet.length)*100).toFixed(2)
+    console.log("Number of spam DataTest: " + count_DataSet );
+    console.log("Number of spam Actual KNN: "+ count_actualKNN);
+    console.log("Percentage of mathcing: " + percent_matching);
+    
+    
+    
+    
+    
+    
+    // console.log(((count_realKNN/count_actual)*100).toFixed(2)+"%");
+
+
   })
 
   return (
