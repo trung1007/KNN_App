@@ -6,15 +6,16 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useState } from 'react';
 import dataset from '../../src/dataset.js'
-import trainData from '../../src/traindata.js'
+// import trainData from '../../src/traindata.js'
 import testData from '../../src/testdata.js'
+import trainData from '../../src/traindata.js'
 import RNFS from 'react-native-fs'
 import * as FileSystem from 'expo-file-system';
 
 export default function HomeScreen() {
   const KNN = require('ml-knn');
 
-  
+
   var train_dataset = [
     [0, 0, 0],
     [0, 1, 1],
@@ -32,7 +33,7 @@ export default function HomeScreen() {
     [1.2, 1.2, 1.2],
   ];
   var ans = knn.predict(test_dataset);
-  
+
 
 
   function computeTF(word: string, document: string): number {
@@ -79,10 +80,10 @@ export default function HomeScreen() {
   const [KNN_JSON_MODEL_Data, set_KNN_JSON_MOEL_Data] = useState();
   const [jsonData, setJsonData] = useState('')
 
-  const saveKNN_JSON = async (knn_model:any) => {
-    const KNN_JSON = JSON.stringify(knn_model,null, 2)
+  const saveKNN_JSON = async (knn_model: any) => {
+    const KNN_JSON = JSON.stringify(knn_model, null, 2)
     const path = FileSystem.documentDirectory + 'knn.json';
-    
+
     try {
       await FileSystem.writeAsStringAsync(path, KNN_JSON);
       console.log("Lưu tệp thành công");
@@ -91,15 +92,15 @@ export default function HomeScreen() {
     }
   };
 
-  const readKNN_JSON = async (testData:any) => {
+  const readKNN_JSON = async (testData: any) => {
     const path = FileSystem.documentDirectory + 'knn.json';
     try {
       // Đọc nội dung của tệp JSON
       const KNN_JSON = await FileSystem.readAsStringAsync(path);
       const parse_KNN_MODEL = JSON.parse(KNN_JSON); // Chuyển chuỗi JSON thành đối tượng
 
-  
-      
+
+
       // console.log(knn); // In thông tin của mô hình để kiểm tra
       // console.log(knn.predict(test_dataset)); // Dự đoán với dữ liệu mới
       const KNN_model = KNN.load(parse_KNN_MODEL)
@@ -111,26 +112,69 @@ export default function HomeScreen() {
       console.log('Lỗi khi đọc tệp:', error);
     }
   };
+
+  const saveTrainDataSetArray = async (trainDataSetArray: any) => {
+    const path = FileSystem.documentDirectory + 'trainDataSetArray.json';
+    const trainDataSetArrayJSON = JSON.stringify(trainDataSetArray, null, 2);
+
+    try {
+      // Ghi chuỗi JSON vào tệp
+      await FileSystem.writeAsStringAsync(path, trainDataSetArrayJSON);
+      console.log("Lưu tệp thành công tại:", path);
+    } catch (error) {
+      console.log("Lỗi khi ghi tệp:", error);
+    }
+  }
+
+  const readTrainDataSetArray = async () => {
+    const path = FileSystem.documentDirectory + 'trainDataSetArray.json'; // Đường dẫn tới file đã lưu
   
+    try {
+      // Đọc nội dung từ tệp
+      const fileContent = await FileSystem.readAsStringAsync(path);
+      
+      // Chuyển đổi chuỗi JSON thành mảng
+      const trainDataSetArray = JSON.parse(fileContent);
+      
+      console.log("Dữ liệu trong tệp:", trainDataSetArray); // In dữ liệu để kiểm tra
+      return trainDataSetArray; // Trả về dữ liệu đã đọc
+    } catch (error) {
+      console.log("Lỗi khi đọc tệp:", error);
+      return null; // Trả về null nếu có lỗi
+    }
+  };
+
+  const saveTrainLabelArray = async(trainLabelArray:any)=>{
+    const path = FileSystem.documentDirectory + 'trainLabelArray.json';
+    const trainLabelJSON = JSON.stringify(trainLabelArray, null, 2)
+    try {
+      // Ghi chuỗi JSON vào tệp
+      await FileSystem.writeAsStringAsync(path, trainLabelArray);
+      console.log("Lưu tệp thành công tại:", path);
+    } catch (error) {
+      console.log("Lỗi khi ghi tệp:", error);
+    }
+  }
+
 
   useEffect(() => {
 
     // const knn_model = JSON.parse(jsonData)
     // console.log(knn.predict(test_dataset));
     // console.log(knn.toJSON());
-    
+
     // console.log(knn_model.predict(test_dataset));
-    
-    // const trainDataSetString = []
-    // const trainLabelTest = []
-    // for (let i = 0; i < trainData.length; i++) {
-    //   if (i % 2 === 0) {
-    //     trainDataSetString.push(trainData[i])
-    //   }
-    //   else {
-    //     trainLabelTest.push(parseInt(trainData[i], 10))
-    //   }
-    // }
+
+    const trainDataSetString = []
+    const trainLabelArray = []
+    for (let i = 0; i < trainData.length; i++) {
+      if (i % 2 === 0) {
+        trainDataSetString.push(trainData[i])
+      }
+      else {
+        trainLabelArray.push(parseInt(trainData[i], 10))
+      }
+    }
     // const trainDataSetArray = []
     // for (let i = 0; i < trainDataSetString.length; i++) {
     //   var trainProccess = (i + 1) * 100 / trainDataSetString.length
@@ -140,53 +184,31 @@ export default function HomeScreen() {
     //   const TfIdfArrayTemp = Object.values(allTfIdfScores[`Document ${i + 1}`])
     //   trainDataSetArray.push(TfIdfArrayTemp)
     // }
-
-    const testDataSetString = []
-    for (let i = 0; i < testData.length; i++) {
-      if (i % 2 === 0) {
-        testDataSetString.push(testData[i])
-      }
-    }
-
-    const testDataSetArray = []
-    for (let i = 0; i < testDataSetString.length; i++) {
-      var convertProccess = (i + 1) * 100 / testDataSetString.length
-      console.log(convertProccess.toFixed(2) + "%");
-      let TfIdfScoreTemp = computeAllTFIDF(testDataSetString[i], testDataSetString)
-      allTfIdfScores[`Document ${i + 1}`] = TfIdfScoreTemp
-      const TfIdfArrayTemp = Object.values(allTfIdfScores[`Document ${i + 1}`])
-      testDataSetArray.push(TfIdfArrayTemp)
-    }
-    // var KNN_test = new KNN(trainDataSetArray, trainLabelTest, { k: 2 });
+    // saveTrainDataSetArray(trainDataSetArray)
+    // saveTrainLabelArray(trainLabelArray)
+    readTrainDataSetArray()
 
 
 
-    // const result_DataSet = []
 
+    // const testDataSetString = []
     // for (let i = 0; i < testData.length; i++) {
-    //   if (i % 2 !== 0) {
-    //     result_DataSet.push(parseInt(testData[i]))
+    //   if (i % 2 === 0) {
+    //     testDataSetString.push(testData[i])
     //   }
     // }
-    // let count_DataSet = 0
-    // let count_actualKNN = 0
-    // const results = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
 
-    // let count = 0
-    // for (let i = 0; i < result_DataSet.length; i++) {
-    //   count_DataSet += result_DataSet[i]
-    //   count_actualKNN += results[i]
-    //   if(result_DataSet[i]===results[i]){
-    //     count++;
-    //   }
+    // const testDataSetArray = []
+    // for (let i = 0; i < testDataSetString.length; i++) {
+    //   var convertProccess = (i + 1) * 100 / testDataSetString.length
+    //   console.log(convertProccess.toFixed(2) + "%");
+    //   let TfIdfScoreTemp = computeAllTFIDF(testDataSetString[i], testDataSetString)
+    //   allTfIdfScores[`Document ${i + 1}`] = TfIdfScoreTemp
+    //   const TfIdfArrayTemp = Object.values(allTfIdfScores[`Document ${i + 1}`])
+    //   testDataSetArray.push(TfIdfArrayTemp)
     // }
-    // const percent_matching = ((count/result_DataSet.length)*100).toFixed(2)
-    // console.log("Number of spam DataTest: " + count_DataSet );
-    // console.log("Number of spam Actual KNN: "+ count_actualKNN);
-    // console.log("Percentage of mathcing: " + percent_matching);
 
-    // saveKNN_JSON(KNN_test)
-    readKNN_JSON(testDataSetArray)
+    // readKNN_JSON(testDataSetArray)
 
   }, [])
 
