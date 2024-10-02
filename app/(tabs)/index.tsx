@@ -149,12 +149,27 @@ export default function HomeScreen() {
     const trainLabelJSON = JSON.stringify(trainLabelArray, null, 2)
     try {
       // Ghi chuỗi JSON vào tệp
-      await FileSystem.writeAsStringAsync(path, trainLabelArray);
+      await FileSystem.writeAsStringAsync(path, trainLabelJSON);
       console.log("Lưu tệp thành công tại:", path);
     } catch (error) {
       console.log("Lỗi khi ghi tệp:", error);
     }
   }
+
+  const readTrainLabelArray = async () => {
+    const path = FileSystem.documentDirectory + 'trainLabelArray.json'; // Đường dẫn tới tệp đã lưu
+    try {
+      // Đọc nội dung của tệp JSON
+      const content = await FileSystem.readAsStringAsync(path);
+      // Chuyển chuỗi JSON thành mảng hoặc đối tượng
+      const trainLabelArray = JSON.parse(content);
+      console.log('Đọc tệp thành công:', trainLabelArray);
+      return trainLabelArray;
+    } catch (error) {
+      console.log("Lỗi khi đọc tệp:", error);
+      return null;
+    }
+  };
 
 
   useEffect(() => {
@@ -186,7 +201,8 @@ export default function HomeScreen() {
     // }
     // saveTrainDataSetArray(trainDataSetArray)
     // saveTrainLabelArray(trainLabelArray)
-    readTrainDataSetArray()
+    // readTrainDataSetArray()
+    readTrainLabelArray()
 
 
 
