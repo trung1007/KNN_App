@@ -62,7 +62,6 @@ export default function HomeScreen() {
     const idf = computeIDF(word, allDocuments);
     return tf * idf;
   }
-
   // Tính TF-IDF cho tất cả từ trong tài liệu
   function computeAllTFIDF(document: string, allDocuments: string[]): Record<string, number> {
     const words: string[] = [...new Set(document.toLowerCase().split(' '))]; // Xóa từ trùng lặp
@@ -74,19 +73,14 @@ export default function HomeScreen() {
 
     return tfidfScores;
   }
-  const allTfidfScores: Record<string, Record<string, number>> = {};
-  const allTfIdfScores: Record<string, Record<string, number>> = {};
-  const allArrayOfSentences: Record<string, Record<string, number>> = {};
+
   const [KNN_JSON_MODEL_Data, set_KNN_JSON_MOEL_Data] = useState<typeof KNN>([])
   const [trainDataSetArray, setTrainDataSetArray] = useState([])
   const [trainDataLabelArray, setTrainDataLabelArray] = useState([])
   const [trainNewModel, setTrainNewModel] = useState(false)
+  const dataDictionary = require('../../assets/dictionary.json')
 
-
-
-
-  //Convert TrainDataSet to array and save its array and label into JSON file in react-native
-  const convertTrainDataSet = (trainDataSet: any) => {
+  function convertWordTovec(trainDataSet: any) {
     const trainDataSetString = []
     const trainLabelArray = []
     for (let i = 0; i < trainDataSet.length; i++) {
@@ -97,20 +91,90 @@ export default function HomeScreen() {
         trainLabelArray.push(parseInt(trainDataSet[i], 10))
       }
     }
+    console.log(trainDataSetString);
+
     const trainDataSetArray = []
     for (let i = 0; i < trainDataSetString.length; i++) {
       var trainProccess = (i + 1) * 100 / trainDataSetString.length
       console.log(trainProccess.toFixed(2) + "%");
-      let TfIdfScoreTemp = computeAllTFIDF(trainDataSetString[i], trainDataSetString)
-      allTfIdfScores[`Document ${i + 1}`] = TfIdfScoreTemp
-      const TfIdfArrayTemp = Object.values(allTfIdfScores[`Document ${i + 1}`])
-      trainDataSetArray.push(TfIdfArrayTemp)
+      let wordsPerSentence: string[] = trainDataSetString[i].toLowerCase().trim().split(" ")
+      let arrayPerSentence: any[] = []
+      for (let j = 0; j < wordsPerSentence.length; j++) {
+        if (wordsPerSentence[j] in dataDictionary) {
+          arrayPerSentence.push(dataDictionary[wordsPerSentence[j]])
+        }
+        else {
+          arrayPerSentence.push(dataDictionary['unknown'])
+        }
+      }
+      trainDataSetArray.push(arrayPerSentence)
     }
     saveTrainDataSetArray(trainDataSetArray)
     saveTrainLabelArray(trainLabelArray)
   }
 
-  // Save KNN_Model
+  const saveTrainDataSetArray = async (trainDataSetArray: any) => {
+    const path = FileSystem.documentDirectory + 'trainDataSetArray.json';
+    const trainDataSetArrayJSON = JSON.stringify(trainDataSetArray, null, 2);
+
+    try {
+      // Ghi chuỗi JSON vào tệp
+      await FileSystem.writeAsStringAsync(path, trainDataSetArrayJSON);
+      // console.log("Lưu tệp thành công tại:", path);
+    } catch (error) {
+      console.log("Lỗi khi ghi tệp:", error);
+    }
+  }
+
+  const saveTrainLabelArray = async (trainLabelArray: any) => {
+    const path = FileSystem.documentDirectory + 'trainLabelArray.json';
+    const trainLabelJSON = JSON.stringify(trainLabelArray, null, 2)
+    try {
+      // Ghi chuỗi JSON vào tệp
+      await FileSystem.writeAsStringAsync(path, trainLabelJSON);
+      // console.log("Lưu tệp thành công tại:", path);
+    } catch (error) {
+      console.log("Lỗi khi ghi tệp:", error);
+    }
+  }
+
+  const readTrainDataSetArray = async () => {
+    const path = FileSystem.documentDirectory + 'trainDataSetArray.json'; // Đường dẫn tới file đã lưu
+
+    try {
+      // Đọc nội dung từ tệp
+      const fileContent = await FileSystem.readAsStringAsync(path);
+
+      // Chuyển đổi chuỗi JSON thành mảng
+      const trainDataSetArray = JSON.parse(fileContent);
+
+      // console.log("Dữ liệu trong tệp:", trainDataSetArray); // In dữ liệu để kiểm tra
+
+      setTrainDataSetArray(trainDataSetArray)
+
+    } catch (error) {
+      console.log("Lỗi khi đọc tệp:", error);
+      return null; // Trả về null nếu có lỗi
+    }
+  };
+
+  const readTrainLabelArray = async () => {
+    const path = FileSystem.documentDirectory + 'trainLabelArray.json'; // Đường dẫn tới tệp đã lưu
+    try {
+      // Đọc nội dung của tệp JSON
+      const content = await FileSystem.readAsStringAsync(path);
+      // Chuyển chuỗi JSON thành mảng hoặc đối tượng
+      const trainLabelArray = JSON.parse(content);
+
+      // console.log('Đọc tệp thành công:', trainLabelArray);
+
+      setTrainDataLabelArray(trainLabelArray)
+    } catch (error) {
+      console.log("Lỗi khi đọc tệp:", error);
+      return null;
+    }
+  };
+
   const saveKNN_JSON = async (knn_model: any) => {
     const KNN_JSON = JSON.stringify(knn_model, null, 2)
     const path = FileSystem.documentDirectory + 'knn.json';
@@ -123,7 +187,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Read KNN_Model
   const readKNN_JSON = async () => {
     const path = FileSystem.documentDirectory + 'knn.json';
     try {
@@ -132,92 +195,14 @@ export default function HomeScreen() {
       const parse_KNN_MODEL = JSON.parse(KNN_JSON); // Chuyển chuỗi JSON thành đối tượng
       const KNN_model = KNN.load(parse_KNN_MODEL)
       set_KNN_JSON_MOEL_Data(KNN_model)
-      // console.log(KNN_model);
       // console.log('Đọc tệp thành công và mô hình KNN đã được khôi phục');
     } catch (error) {
       console.log('Lỗi khi đọc tệp:', error);
     }
   };
 
-  // Save TrainDataSet
-  const saveTrainDataSetArray = async (trainDataSetArray: any) => {
-    const path = FileSystem.documentDirectory + 'trainDataSetArray.json';
-    const trainDataSetArrayJSON = JSON.stringify(trainDataSetArray, null, 2);
 
-    try {
-      // Ghi chuỗi JSON vào tệp
-      await FileSystem.writeAsStringAsync(path, trainDataSetArrayJSON);
-      console.log("Lưu tệp thành công tại:", path);
-    } catch (error) {
-      console.log("Lỗi khi ghi tệp:", error);
-    }
-  }
-
-  // Read TrainDataSet
-  const readTrainDataSetArray = async () => {
-    const path = FileSystem.documentDirectory + 'trainDataSetArray.json'; // Đường dẫn tới file đã lưu
-
-    try {
-      // Đọc nội dung từ tệp
-      const fileContent = await FileSystem.readAsStringAsync(path);
-
-      // Chuyển đổi chuỗi JSON thành mảng
-      const trainDataSetArray = JSON.parse(fileContent);
-
-      console.log("Dữ liệu trong tệp:", trainDataSetArray); // In dữ liệu để kiểm tra
-
-      setTrainDataSetArray(trainDataSetArray)
-
-    } catch (error) {
-      console.log("Lỗi khi đọc tệp:", error);
-      return null; // Trả về null nếu có lỗi
-    }
-  };
-
-  // Save Train_label
-  const saveTrainLabelArray = async (trainLabelArray: any) => {
-    const path = FileSystem.documentDirectory + 'trainLabelArray.json';
-    const trainLabelJSON = JSON.stringify(trainLabelArray, null, 2)
-    try {
-      // Ghi chuỗi JSON vào tệp
-      await FileSystem.writeAsStringAsync(path, trainLabelJSON);
-      console.log("Lưu tệp thành công tại:", path);
-    } catch (error) {
-      console.log("Lỗi khi ghi tệp:", error);
-    }
-  }
-
-  // Read Train_Label
-  const readTrainLabelArray = async () => {
-    const path = FileSystem.documentDirectory + 'trainLabelArray.json'; // Đường dẫn tới tệp đã lưu
-    try {
-      // Đọc nội dung của tệp JSON
-      const content = await FileSystem.readAsStringAsync(path);
-      // Chuyển chuỗi JSON thành mảng hoặc đối tượng
-      const trainLabelArray = JSON.parse(content);
-
-      console.log('Đọc tệp thành công:', trainLabelArray);
-
-      setTrainDataLabelArray(trainLabelArray)
-    } catch (error) {
-      console.log("Lỗi khi đọc tệp:", error);
-      return null;
-    }
-  };
-
-  function convertSentenceToArray(sentences: string[]) {
-    let convertToArray: any = []
-    for (let i = 0; i < sentences.length; i++) {
-      let sentenceTfIdf = computeAllTFIDF(sentences[i], sentences)
-      allArrayOfSentences[`Document ${i + 1}`] = sentenceTfIdf
-      let sentenceArray = Object.values(allArrayOfSentences[`Document ${i + 1}`])
-      convertToArray.push(sentenceArray)
-    }
-    return convertToArray
-  }
-
-  function trainKNN_Model(trainDataSet: any) {
-    convertTrainDataSet(trainDataSet)
+  function trainKNN_Model(trainDataSet?: any) {
     readTrainDataSetArray()
     readTrainLabelArray()
     const KNN_model = new KNN(trainDataSetArray, trainDataLabelArray, { k: 2 })
@@ -225,57 +210,65 @@ export default function HomeScreen() {
     readKNN_JSON()
   }
 
+  function convertTestToArray(sentences: string[]) {
 
-
-
-
-  useEffect(() => {
-    // saveTrainDataSetArray(trainDataSetArray)
-    // saveTrainLabelArray(trainLabelArray)
-    // readTrainDataSetArray()
-    // readTrainLabelArray()
-
-
-    // const testDataSetString = []
-    // for (let i = 0; i < testData.length; i++) {
-    //   if (i % 2 === 0) {
-    //     testDataSetString.push(testData[i])
-    //   }
-    // }
-
-    // const testDataSetArray = []
-    // for (let i = 0; i < testDataSetString.length; i++) {
-    //   var convertProccess = (i + 1) * 100 / testDataSetString.length
-    //   console.log(convertProccess.toFixed(2) + "%");
-    //   let TfIdfScoreTemp = computeAllTFIDF(testDataSetString[i], testDataSetString)
-    //   allTfIdfScores[`Document ${i + 1}`] = TfIdfScoreTemp
-    //   const TfIdfArrayTemp = Object.values(allTfIdfScores[`Document ${i + 1}`])
-    //   testDataSetArray.push(TfIdfArrayTemp)
-    // }
-
-
-
-
-    let sentencesTotest: string[] = ["Xin chao ban", "Toi ten la", "Em Co' S0-NamSinh 0812.18.08.70 asdasdsa ", "Em Co' S0-NamSinh 0812.18.08.70  = 550K *CAII.09 8222 5777 Cam.On QK!--tnPYX-"]
-    let sentencesArray = convertSentenceToArray(sentencesTotest)
-
-    // Condition to train new model or not 
-    if (trainNewModel) {
-      trainKNN_Model(trainData)
-    }
-    else {
-      readKNN_JSON()
-      if (KNN_JSON_MODEL_Data !== undefined) {
-        try {
-          console.log(KNN_JSON_MODEL_Data);
-
-          console.log(KNN_JSON_MODEL_Data.predict(sentencesArray));
-
-        } catch (error) {
-          console.log(error);
-        }
+    let sentencesString: any = []
+    for (let i = 0; i < sentences.length; i++) {
+      if (i % 2 === 0) {
+        sentencesString.push(sentences[i])
       }
     }
+
+    const sentencesArray: any[] = []
+
+
+    for (let i = 0; i < sentencesString.length; i++) {
+      let wordsPerSentence: string[] = sentencesString[i].toLowerCase().trim().split(" ")
+      let arrayPerSentence: any[] = []
+      for (let j = 0; j < wordsPerSentence.length; j++) {
+        if (wordsPerSentence[j] in dataDictionary) {
+          arrayPerSentence.push(dataDictionary[wordsPerSentence[j]])
+        }
+        else {
+          arrayPerSentence.push(dataDictionary['unknown'])
+        }
+      }
+      sentencesArray.push(arrayPerSentence)
+    }
+    return sentencesArray
+  }
+
+  useEffect(() => {
+    // trainKNN_Model()
+    // readKNN_JSON()
+    // console.log(KNN_JSON_MODEL_Data);
+    // let sentencesTotest: string[] = ["Xin chao ban", "0", "Toi ten la", "0", "EmCo' Ban Nam.sSinh 0812.18.08.70 Gja 550K ,CAl 0981-008-008  -nSjzB-", "1", "Em Co' S0-NamSinh 0812.18.08.70  = 550K *CAII.09 8222 5777 Cam.On QK!--tnPYX-", "1"]
+    // let sentencesToArray = convertTestToArray(testData)
+    // const res = KNN_JSON_MODEL_Data.predict(sentencesToArray)
+    // console.log(res);
+    const res1 = [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    const results = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+
+    let c1 = 0;
+    let c2 = 0;
+    let c3 =0;
+    for(let i =0;i<res1.length;i++){
+      c1+=res1[i]
+      c2+=results[i]
+      if(res1[i] === results[i]){
+        c3++;
+      }
+    }
+    console.log(c1);
+    console.log(c2);
+    console.log(c3);
+    
+    console.log((c3/res1.length).toFixed(2)+'%');
+    
+    
+    
+    
+
 
 
   }, [])
