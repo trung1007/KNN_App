@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { View, SafeAreaView, Text, TextInput, StyleSheet, Button } from 'react-native'
+import { View, SafeAreaView, Text, TextInput, StyleSheet, Button, TouchableOpacity } from 'react-native'
 import * as FileSystem from 'expo-file-system';
+import { useNavigation } from "@react-navigation/native";
+import { AntDesign } from "@expo/vector-icons";
 
+const MessageScreen = () => {
 
-const ChatScreen = () => {
+    const navigation = useNavigation()
 
     const KNN = require('ml-knn');
 
     const [KNN_JSON_MODEL_Data, set_KNN_JSON_MOEL_Data] = useState<typeof KNN>([])
-    const dataDictionary = require('../../assets/dictionary.json')
+    const dataDictionary = require('../../../assets/dictionary.json')
 
 
     const [text, onChangeText] = useState('');
@@ -56,10 +59,9 @@ const ChatScreen = () => {
 
     const handleDetect = (text: string) => {
 
-        readKNN_JSON()
-        setDetect(text)
+        // readKNN_JSON()
         let tmp: any = []
-    let sentencesToArray = convertTestToArray(text);
+        let sentencesToArray = convertTestToArray(text);
 
         console.log(KNN_JSON_MODEL_Data);
         try {
@@ -67,19 +69,23 @@ const ChatScreen = () => {
         } catch (error) {
             console.log(error);
         }
-        console.log(tmp);
-        
-
+        setDetect(tmp)
     }
 
     return (
-        <SafeAreaView style={{ display: 'flex', flex: 1 }}>
+        <View style={{ flex: 1 }}>
             <View style={{ height: 300, backgroundColor: 'red' }}>
-
+                <TouchableOpacity
+                    onPress={() => {
+                        navigation.goBack();
+                    }}
+                >
+                    <AntDesign
+                        name="arrowleft"
+                        size={24}
+                    />
+                </TouchableOpacity>
             </View>
-            <Text>
-                aaaaaaa
-            </Text>
             <TextInput
                 style={styles.input}
                 onChangeText={onChangeText}
@@ -93,7 +99,8 @@ const ChatScreen = () => {
                 </Text>
             </View>
 
-        </SafeAreaView>
+
+        </View>
     )
 }
 
@@ -106,4 +113,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ChatScreen
+export default MessageScreen
