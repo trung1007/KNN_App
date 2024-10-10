@@ -8,7 +8,6 @@ const ChatLayout = () => {
         <SafeAreaProvider>
             <SafeAreaView style={styles.container}>
                 <Slot />
-
             </SafeAreaView>
 
         </SafeAreaProvider>

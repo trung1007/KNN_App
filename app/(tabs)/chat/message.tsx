@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, SafeAreaView, Text, TextInput, StyleSheet, Button, TouchableOpacity } from 'react-native'
+import { View, SafeAreaView, Text, TextInput, StyleSheet, Button, TouchableOpacity, Image } from 'react-native'
 import * as FileSystem from 'expo-file-system';
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
@@ -74,8 +74,7 @@ const MessageScreen = () => {
 
     return (
         <View style={{ flex: 1 }}>
-            <View style={{ height: 300, backgroundColor: 'red' }}>
-                <TouchableOpacity
+            <TouchableOpacity
                     onPress={() => {
                         navigation.goBack();
                     }}
@@ -84,6 +83,11 @@ const MessageScreen = () => {
                         name="arrowleft"
                         size={24}
                     />
+                </TouchableOpacity>
+            <View style={styles.userInf}>
+                <Image source={require('../../../assets/images/avatar.jpg')} style={styles.avatar} />
+                <TouchableOpacity>
+                    <Text>Cao Thanh Trung - </Text>
                 </TouchableOpacity>
             </View>
             <TextInput
@@ -111,6 +115,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         padding: 10,
     },
+    userInf:{
+        height:100,
+        justifyContent:'center',
+        alignItems:'center'
+    },
+    avatar:{
+        height:80,
+        width:80,
+        borderRadius:40
+    }
 });
 
 export default MessageScreen
