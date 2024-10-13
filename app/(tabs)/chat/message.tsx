@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, SafeAreaView, Text, TextInput, StyleSheet, Button, TouchableOpacity, Image } from 'react-native'
+import { View, SafeAreaView, Text, TextInput, StyleSheet, Button, TouchableOpacity, Image, ScrollView } from 'react-native'
 import * as FileSystem from 'expo-file-system';
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
@@ -17,6 +17,9 @@ const MessageScreen = () => {
     const [text, onChangeText] = useState('');
     const [number, onChangeNumber] = useState('');
     const [dectect, setDetect] = useState('')
+    const [message, setMessage] = useState('')
+    const messages: string[] = []
+
 
     const readKNN_JSON = async () => {
         const path = FileSystem.documentDirectory + 'knn.json';
@@ -57,9 +60,15 @@ const MessageScreen = () => {
         return sentencesArray
     }
 
-    const handleDetect = (text: string) => {
+    const goDetail = () => {
+        //@ts-ignore
+        navigation.navigate('inf')
+    }
 
-        // readKNN_JSON()
+
+    const handleDetect = async (text: string) => {
+
+        await readKNN_JSON()
         let tmp: any = []
         let sentencesToArray = convertTestToArray(text);
 
@@ -71,37 +80,49 @@ const MessageScreen = () => {
         }
         setDetect(tmp)
     }
+    const sendMessage = (text: string) => {
+        messages.push(text)
+        console.log(messages);
+        
+    }
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={styles.container}>
             <TouchableOpacity
-                    onPress={() => {
-                        navigation.goBack();
-                    }}
-                >
-                    <AntDesign
-                        name="arrowleft"
-                        size={24}
-                    />
-                </TouchableOpacity>
+                onPress={() => {
+                    navigation.goBack();
+                }}
+            >
+                <AntDesign
+                    name="arrowleft"
+                    size={24}
+                />
+            </TouchableOpacity>
             <View style={styles.userInf}>
                 <Image source={require('../../../assets/images/avatar.jpg')} style={styles.avatar} />
-                <TouchableOpacity>
-                    <Text>Cao Thanh Trung - </Text>
+                <TouchableOpacity style={styles.infDetail} onPress={goDetail}>
+                    <Text>Cao Thanh Trung</Text>
+                    <AntDesign name="right" size={16} color="black" />
                 </TouchableOpacity>
             </View>
-            <TextInput
-                style={styles.input}
-                onChangeText={onChangeText}
-                value={text}
-            />
-            <Button title='detect' onPress={() => { handleDetect(text) }} />
-
-            <View>
-                <Text>
-                    {dectect}
-                </Text>
+            <ScrollView>
+                {messages.map((message, index) => (
+                    <Text key={index}>
+                        {message}
+                    </Text>
+                ))}
+            </ScrollView>
+            <View style={styles.input}>
+                <TextInput
+                    style={styles.inputPlace}
+                    onChangeText={onChangeText}
+                    value={text}
+                />
+                <TouchableOpacity onPress={() => { sendMessage(text) }}>
+                    <AntDesign name="rightcircle" size={24} color="blue" />
+                </TouchableOpacity>
             </View>
+
 
 
         </View>
@@ -109,21 +130,43 @@ const MessageScreen = () => {
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1
+    },
+    userInf: {
+        height: 100,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    avatar: {
+        height: 80,
+        width: 80,
+        borderRadius: 40
+    },
+    infDetail: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
     input: {
-        height: 40,
-        margin: 12,
-        borderWidth: 1,
+        marginLeft: 8,
+        marginRight: 8,
+        display: 'flex',
+        flexDirection: 'row',
         padding: 10,
+        position: 'absolute',
+        bottom: 0,
+        width: '80%',
+        alignItems: 'center'
+
     },
-    userInf:{
-        height:100,
-        justifyContent:'center',
-        alignItems:'center'
-    },
-    avatar:{
-        height:80,
-        width:80,
-        borderRadius:40
+    inputPlace: {
+        borderWidth: 1,
+        borderRadius: 20,
+        width: '100%',
+        padding: 8,
+        height: 32,
+        marginRight: 16
     }
 });
 
